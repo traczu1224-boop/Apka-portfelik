@@ -121,20 +121,28 @@ class TransactionsTab(QWidget):
         self.table.resizeColumnsToContents()
 
     def add_transaction(self) -> None:
-        symbol = self.symbol_input.text().strip()
+        symbol = self.symbol_input.text().strip().upper()
         if not symbol:
             QMessageBox.warning(self, "Błąd", "Podaj symbol.")
+            return
+        currency = self.currency_input.text().strip().upper()
+        if not currency:
+            QMessageBox.warning(self, "Błąd", "Podaj walutę.")
             return
         self.db.add_transaction(
             symbol=symbol,
             trade_date=self.date_input.date().toString("yyyy-MM-dd"),
             quantity=self.quantity_input.value(),
             price=self.price_input.value(),
-            currency=self.currency_input.text().strip(),
+            currency=currency,
             fee=self.fee_input.value(),
         )
         self.refresh()
         self.on_change()
+        self.symbol_input.clear()
+        self.quantity_input.setValue(0.0)
+        self.price_input.setValue(0.0)
+        self.fee_input.setValue(0.0)
 
     def _selected_transaction_id(self) -> int | None:
         rows = self.table.selectionModel().selectedRows()
@@ -183,8 +191,23 @@ class TransactionsTab(QWidget):
         )
         if not path_str:
             return
-        count = self.db.import_transactions_csv(Path(path_str))
-        QMessageBox.information(self, "Import", f"Zaimportowano {count} transakcji.")
+        summary = self.db.import_transactions_csv(Path(path_str))
+        message = f"Zaimportowano {summary.imported} transakcji."
+        if summary.skipped:
+            message += f" Pominęto {summary.skipped}."
+        if summary.errors:
+            extra = ""
+            max_errors = 10
+            if len(summary.errors) > max_errors:
+                extra = f"\n... i {len(summary.errors) - max_errors} więcej"
+            message += (
+                "\n\nBłędy:\n"
+                + "\n".join(summary.errors[:max_errors])
+                + extra
+            )
+            QMessageBox.warning(self, "Import", message)
+        else:
+            QMessageBox.information(self, "Import", message)
         self.refresh()
         self.on_change()
 
