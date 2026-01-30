@@ -1,0 +1,32 @@
+# Apka Portfelik
+
+Lokalna aplikacja desktopowa do śledzenia portfela akcji. Dane są przechowywane w SQLite, a notowania pobierane z darmowego CSV Stooq (bez API key).
+
+## Wymagania
+- Python 3.11+ (najlepiej 3.12)
+- Windows / Linux / macOS
+
+## Instalacja (Windows)
+```bash
+python -m venv .venv
+.venv\\Scripts\\activate
+pip install -r requirements.txt
+python main.py
+```
+
+## Dane i cache
+- Domyślny plik bazy danych: `data/portfolio.db`.
+- Limity pobrań i folder danych można zmienić w zakładce **Ustawienia**.
+
+## Budowanie EXE (opcjonalnie)
+```bash
+build.bat
+```
+
+## Źródło notowań
+- Stooq CSV: `https://stooq.com/q/d/l/?s={SYMBOL}&i=d`
+
+## Testy
+```bash
+pytest
+```
