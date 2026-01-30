@@ -18,18 +18,11 @@ QTableWidget {
     border: 1px solid #2A3140;
     border-radius: 8px;
 }
-QTableWidget::item {
-    padding: 6px;
-}
 QHeaderView::section {
     background-color: #1B2029;
     color: #AEB6C2;
     padding: 6px 8px;
     border: none;
-}
-QTableWidget::item:selected {
-    background-color: #2E6EEB;
-    color: #FFFFFF;
 }
 QPushButton {
     background-color: #2E6EEB;

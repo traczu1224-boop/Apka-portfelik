@@ -3,7 +3,6 @@ from PySide6.QtWidgets import (
     QFrame,
     QGridLayout,
     QLabel,
-    QHeaderView,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -30,37 +29,24 @@ class ReturnsTab(QWidget):
         self.summary_card = QFrame()
         self.summary_card.setObjectName("Card")
         self.summary_layout = QGridLayout(self.summary_card)
-        self.summary_layout.setHorizontalSpacing(24)
-        self.summary_layout.setVerticalSpacing(8)
         self.summary_labels: list[tuple[QLabel, QLabel]] = []
-        summary_labels = ["1M", "3M", "6M", "1Y", "YTD", "Od początku"]
-        for idx, label in enumerate(summary_labels):
+        for idx, label in enumerate(["1M", "3M", "6M", "1Y", "YTD", "Od początku"]):
             name = QLabel(label)
             name.setObjectName("MutedText")
             value = QLabel("-")
             value.setObjectName("SectionTitle")
-            row = 0 if idx < 3 else 2
-            column = idx if idx < 3 else idx - 3
-            self.summary_layout.addWidget(name, row, column)
-            self.summary_layout.addWidget(value, row + 1, column)
+            self.summary_layout.addWidget(name, 0, idx)
+            self.summary_layout.addWidget(value, 1, idx)
             self.summary_labels.append((name, value))
 
         self.table = QTableWidget(0, 3)
         self.table.setHorizontalHeaderLabels(["Okres", "TWR %", "MWR (XIRR) %"])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.verticalHeader().setVisible(False)
-        self.table.setAlternatingRowColors(True)
-
-        self.empty_label = QLabel("Brak danych do wyświetlenia zwrotów.")
-        self.empty_label.setObjectName("MutedText")
 
         layout = QVBoxLayout()
         layout.addWidget(title)
         layout.addWidget(description)
         layout.addWidget(self.summary_card)
-        layout.addWidget(self.empty_label)
         layout.addWidget(self.table)
-        layout.setStretch(4, 1)
         self.setLayout(layout)
 
         self.refresh()
@@ -73,10 +59,6 @@ class ReturnsTab(QWidget):
         }
         history = compute_portfolio_history(transactions, prices_by_symbol)
         results = compute_returns(history, transactions)
-
-        has_data = bool(results)
-        self.empty_label.setVisible(not has_data)
-        self.table.setVisible(has_data)
 
         self.table.setRowCount(len(results))
         for row_idx, result in enumerate(results):

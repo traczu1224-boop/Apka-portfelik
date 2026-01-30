@@ -3,7 +3,6 @@ from collections import defaultdict
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
-    QHeaderView,
     QLabel,
     QMessageBox,
     QPushButton,
@@ -47,9 +46,6 @@ class PortfolioTab(QWidget):
             ]
         )
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.verticalHeader().setVisible(False)
-        self.table.setAlternatingRowColors(True)
 
         self.pie_chart = MatplotlibChart()
         self.line_chart = MatplotlibChart(height=3)
@@ -66,8 +62,6 @@ class PortfolioTab(QWidget):
         layout.addWidget(self.info_label)
         layout.addWidget(self.table)
         layout.addWidget(chart_card)
-        layout.setStretch(3, 1)
-        layout.setStretch(4, 1)
         self.setLayout(layout)
 
         self.refresh()

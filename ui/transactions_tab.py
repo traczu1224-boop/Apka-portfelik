@@ -17,7 +17,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtWidgets import QHeaderView
 
 from core.db import Database
 from ui.transaction_dialog import TransactionDialog
@@ -67,9 +66,6 @@ class TransactionsTab(QWidget):
         )
         self.table.setColumnHidden(0, True)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.verticalHeader().setVisible(False)
-        self.table.setAlternatingRowColors(True)
 
         edit_button = QPushButton("Edytuj")
         delete_button = QPushButton("Usuń")
@@ -100,7 +96,6 @@ class TransactionsTab(QWidget):
         layout.addWidget(description)
         layout.addWidget(form_card)
         layout.addWidget(self.table)
-        layout.setStretch(3, 1)
         self.setLayout(layout)
 
         self.refresh()
