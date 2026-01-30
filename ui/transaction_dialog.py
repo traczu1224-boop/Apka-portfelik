@@ -69,10 +69,10 @@ class TransactionDialog(QDialog):
 
     def get_values(self) -> dict:
         return {
-            "symbol": self.symbol_input.text().strip(),
+            "symbol": self.symbol_input.text().strip().upper(),
             "trade_date": self.date_input.date().toString("yyyy-MM-dd"),
             "quantity": self.quantity_input.value(),
             "price": self.price_input.value(),
-            "currency": self.currency_input.text().strip(),
+            "currency": self.currency_input.text().strip().upper(),
             "fee": self.fee_input.value(),
         }

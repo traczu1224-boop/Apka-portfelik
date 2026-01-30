@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.analytics import compute_risk_metrics
 from core.calculations import compute_portfolio_history
 from core.db import Database
 from core.returns import compute_returns
@@ -42,10 +43,23 @@ class ReturnsTab(QWidget):
         self.table = QTableWidget(0, 3)
         self.table.setHorizontalHeaderLabels(["Okres", "TWR %", "MWR (XIRR) %"])
 
+        self.risk_card = QFrame()
+        self.risk_card.setObjectName("Card")
+        self.risk_layout = QGridLayout(self.risk_card)
+        self.drawdown_label = QLabel("-")
+        self.drawdown_label.setObjectName("SectionTitle")
+        self.vol_label = QLabel("-")
+        self.vol_label.setObjectName("SectionTitle")
+        self.risk_layout.addWidget(QLabel("Max drawdown"), 0, 0)
+        self.risk_layout.addWidget(QLabel("Zmienność (ann.)"), 0, 1)
+        self.risk_layout.addWidget(self.drawdown_label, 1, 0)
+        self.risk_layout.addWidget(self.vol_label, 1, 1)
+
         layout = QVBoxLayout()
         layout.addWidget(title)
         layout.addWidget(description)
         layout.addWidget(self.summary_card)
+        layout.addWidget(self.risk_card)
         layout.addWidget(self.table)
         self.setLayout(layout)
 
@@ -59,6 +73,7 @@ class ReturnsTab(QWidget):
         }
         history = compute_portfolio_history(transactions, prices_by_symbol)
         results = compute_returns(history, transactions)
+        risk = compute_risk_metrics(history)
 
         self.table.setRowCount(len(results))
         for row_idx, result in enumerate(results):
@@ -81,3 +96,10 @@ class ReturnsTab(QWidget):
                 value_label.setText(f"{result.twr:.2f}%")
             else:
                 value_label.setText("-")
+
+        self.drawdown_label.setText(
+            f"{risk.max_drawdown_pct:.2f}%" if risk.max_drawdown_pct is not None else "-"
+        )
+        self.vol_label.setText(
+            f"{risk.volatility_pct:.2f}%" if risk.volatility_pct is not None else "-"
+        )

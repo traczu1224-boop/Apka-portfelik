@@ -33,6 +33,11 @@ class SettingsTab(QWidget):
         self.min_interval_input.setMaximum(1440)
         self.min_interval_input.setValue(app_settings.min_interval_minutes)
 
+        self.auto_refresh_input = QSpinBox()
+        self.auto_refresh_input.setMinimum(1)
+        self.auto_refresh_input.setMaximum(1440)
+        self.auto_refresh_input.setValue(app_settings.auto_refresh_minutes)
+
         self.eod_only_check = QCheckBox("Używaj tylko EOD (close)")
         self.eod_only_check.setChecked(app_settings.eod_only)
 
@@ -50,6 +55,7 @@ class SettingsTab(QWidget):
         data_row.addWidget(self.browse_button)
         form.addRow("Folder danych", data_row)
         form.addRow("Limit pobrań (min)", self.min_interval_input)
+        form.addRow("Auto-odświeżanie (min)", self.auto_refresh_input)
         form.addRow("", self.eod_only_check)
 
         form_card = QFrame()
@@ -75,6 +81,7 @@ class SettingsTab(QWidget):
     def save(self) -> None:
         self.app_settings.data_dir = Path(self.data_dir_input.text()).expanduser()
         self.app_settings.min_interval_minutes = int(self.min_interval_input.value())
+        self.app_settings.auto_refresh_minutes = int(self.auto_refresh_input.value())
         self.app_settings.eod_only = self.eod_only_check.isChecked()
         save_settings(self.app_settings)
         QMessageBox.information(self, "Ustawienia", "Zapisano ustawienia.")

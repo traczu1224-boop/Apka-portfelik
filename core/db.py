@@ -29,6 +29,39 @@ class PriceRow:
     source: str
 
 
+@dataclass
+class ImportSummary:
+    imported: int
+    skipped: int
+    errors: list[str]
+
+
+@dataclass
+class InstrumentInfo:
+    symbol: str
+    sector: str
+    tags: str
+
+
+@dataclass
+class FxRate:
+    currency: str
+    rate: float
+    date: str
+    source: str
+
+
+@dataclass
+class UpdateLog:
+    id: int
+    timestamp: str
+    symbol: str
+    message: str
+    rows_added: int
+    last_date: Optional[str]
+    source: str
+
+
 class Database:
     def __init__(self, db_path: Path) -> None:
         self.db_path = db_path
@@ -73,6 +106,38 @@ class Database:
             CREATE TABLE IF NOT EXISTS metadata (
                 key TEXT PRIMARY KEY,
                 value TEXT
+            )
+            """
+        )
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS instruments (
+                symbol TEXT PRIMARY KEY,
+                sector TEXT,
+                tags TEXT
+            )
+            """
+        )
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS fx_rates (
+                currency TEXT PRIMARY KEY,
+                rate REAL NOT NULL,
+                date TEXT NOT NULL,
+                source TEXT NOT NULL
+            )
+            """
+        )
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS update_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                message TEXT NOT NULL,
+                rows_added INTEGER NOT NULL,
+                last_date TEXT,
+                source TEXT NOT NULL
             )
             """
         )
@@ -143,21 +208,33 @@ class Database:
             for row in rows
         ]
 
-    def import_transactions_csv(self, path: Path) -> int:
+    def import_transactions_csv(self, path: Path) -> ImportSummary:
         count = 0
+        skipped = 0
+        errors: list[str] = []
+        required_fields = ["symbol", "trade_date", "quantity", "price", "currency"]
         with path.open(newline="", encoding="utf-8") as handle:
             reader = csv.DictReader(handle)
-            for row in reader:
-                self.add_transaction(
-                    symbol=row["symbol"],
-                    trade_date=row["trade_date"],
-                    quantity=float(row["quantity"]),
-                    price=float(row["price"]),
-                    currency=row["currency"],
-                    fee=float(row.get("fee", 0) or 0),
-                )
-                count += 1
-        return count
+            for row_number, row in enumerate(reader, start=2):
+                try:
+                    missing = [
+                        field for field in required_fields if not row.get(field)
+                    ]
+                    if missing:
+                        raise ValueError(f"Brak pól: {', '.join(missing)}")
+                    self.add_transaction(
+                        symbol=row["symbol"].strip().upper(),
+                        trade_date=row["trade_date"].strip(),
+                        quantity=float(row["quantity"]),
+                        price=float(row["price"]),
+                        currency=row["currency"].strip().upper(),
+                        fee=float(row.get("fee", 0) or 0),
+                    )
+                    count += 1
+                except (KeyError, ValueError) as exc:
+                    skipped += 1
+                    errors.append(f"Wiersz {row_number}: {exc}")
+        return ImportSummary(imported=count, skipped=skipped, errors=errors)
 
     def export_transactions_csv(self, path: Path) -> None:
         fieldnames = ["symbol", "trade_date", "quantity", "price", "currency", "fee"]
@@ -175,6 +252,114 @@ class Database:
                         "fee": transaction.fee,
                     }
                 )
+
+    def upsert_instrument(self, symbol: str, sector: str, tags: str) -> None:
+        cursor = self.connection.cursor()
+        cursor.execute(
+            """
+            INSERT OR REPLACE INTO instruments (symbol, sector, tags)
+            VALUES (?, ?, ?)
+            """,
+            (symbol, sector, tags),
+        )
+        self.connection.commit()
+
+    def get_instrument(self, symbol: str) -> Optional[InstrumentInfo]:
+        cursor = self.connection.cursor()
+        row = cursor.execute(
+            "SELECT symbol, sector, tags FROM instruments WHERE symbol = ?",
+            (symbol,),
+        ).fetchone()
+        if not row:
+            return None
+        return InstrumentInfo(
+            symbol=row["symbol"],
+            sector=row["sector"] or "",
+            tags=row["tags"] or "",
+        )
+
+    def list_instruments(self) -> list[InstrumentInfo]:
+        cursor = self.connection.cursor()
+        rows = cursor.execute(
+            "SELECT symbol, sector, tags FROM instruments ORDER BY symbol ASC"
+        ).fetchall()
+        return [
+            InstrumentInfo(
+                symbol=row["symbol"],
+                sector=row["sector"] or "",
+                tags=row["tags"] or "",
+            )
+            for row in rows
+        ]
+
+    def upsert_fx_rate(self, currency: str, rate: float, date: str, source: str) -> None:
+        cursor = self.connection.cursor()
+        cursor.execute(
+            """
+            INSERT OR REPLACE INTO fx_rates (currency, rate, date, source)
+            VALUES (?, ?, ?, ?)
+            """,
+            (currency, rate, date, source),
+        )
+        self.connection.commit()
+
+    def get_fx_rates(self) -> dict[str, FxRate]:
+        cursor = self.connection.cursor()
+        rows = cursor.execute(
+            "SELECT currency, rate, date, source FROM fx_rates"
+        ).fetchall()
+        return {
+            row["currency"]: FxRate(
+                currency=row["currency"],
+                rate=row["rate"],
+                date=row["date"],
+                source=row["source"],
+            )
+            for row in rows
+        }
+
+    def add_update_log(
+        self,
+        timestamp: str,
+        symbol: str,
+        message: str,
+        rows_added: int,
+        last_date: Optional[str],
+        source: str,
+    ) -> None:
+        cursor = self.connection.cursor()
+        cursor.execute(
+            """
+            INSERT INTO update_logs (timestamp, symbol, message, rows_added, last_date, source)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (timestamp, symbol, message, rows_added, last_date, source),
+        )
+        self.connection.commit()
+
+    def list_update_logs(self, limit: int = 200) -> list[UpdateLog]:
+        cursor = self.connection.cursor()
+        rows = cursor.execute(
+            """
+            SELECT id, timestamp, symbol, message, rows_added, last_date, source
+            FROM update_logs
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        return [
+            UpdateLog(
+                id=row["id"],
+                timestamp=row["timestamp"],
+                symbol=row["symbol"],
+                message=row["message"],
+                rows_added=row["rows_added"],
+                last_date=row["last_date"],
+                source=row["source"],
+            )
+            for row in rows
+        ]
 
     def upsert_prices(self, symbol: str, rows: Iterable[dict]) -> int:
         cursor = self.connection.cursor()
