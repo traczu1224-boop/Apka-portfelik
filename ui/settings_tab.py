@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QFileDialog,
     QFormLayout,
-    QGroupBox,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -24,12 +24,6 @@ class SettingsTab(QWidget):
         self.app_settings = app_settings
         self.on_save = on_save
 
-        title = QLabel("Ustawienia")
-        title.setObjectName("sectionTitle")
-        subtitle = QLabel("Dostosuj źródło danych i częstotliwość pobierania notowań.")
-        subtitle.setObjectName("sectionSubtitle")
-        subtitle.setWordWrap(True)
-
         self.data_dir_input = QLineEdit(str(app_settings.data_dir))
         self.browse_button = QPushButton("Wybierz")
         self.browse_button.clicked.connect(self.select_folder)
@@ -45,6 +39,11 @@ class SettingsTab(QWidget):
         self.save_button = QPushButton("Zapisz ustawienia")
         self.save_button.clicked.connect(self.save)
 
+        title = QLabel("Ustawienia")
+        title.setObjectName("SectionTitle")
+        description = QLabel("Skonfiguruj folder danych i częstotliwość pobrań.")
+        description.setObjectName("MutedText")
+
         form = QFormLayout()
         data_row = QHBoxLayout()
         data_row.addWidget(self.data_dir_input)
@@ -53,15 +52,15 @@ class SettingsTab(QWidget):
         form.addRow("Limit pobrań (min)", self.min_interval_input)
         form.addRow("", self.eod_only_check)
 
-        form_group = QGroupBox("Konfiguracja")
-        form_group.setLayout(form)
+        form_card = QFrame()
+        form_card.setObjectName("Card")
+        form_card_layout = QVBoxLayout(form_card)
+        form_card_layout.addLayout(form)
 
         layout = QVBoxLayout()
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(16)
         layout.addWidget(title)
-        layout.addWidget(subtitle)
-        layout.addWidget(form_group)
+        layout.addWidget(description)
+        layout.addWidget(form_card)
         layout.addWidget(self.save_button)
         layout.addStretch()
         self.setLayout(layout)

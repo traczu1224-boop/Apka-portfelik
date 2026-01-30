@@ -8,6 +8,7 @@ Lokalna aplikacja desktopowa do śledzenia portfela akcji. Dane są przechowywan
 
 ## Instalacja (Windows)
 ```bash
+cd C:\sciezka\do\folderu\z\projektem
 python -m venv .venv
 .venv\\Scripts\\activate
 pip install -r requirements.txt

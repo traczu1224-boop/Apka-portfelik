@@ -4,9 +4,8 @@ from PySide6.QtCore import Qt, QDate
 from PySide6.QtWidgets import (
     QFileDialog,
     QFormLayout,
-    QGroupBox,
+    QFrame,
     QHBoxLayout,
-    QHeaderView,
     QLabel,
     QLineEdit,
     QMessageBox,
@@ -29,12 +28,6 @@ class TransactionsTab(QWidget):
         self.db = db
         self.on_change = on_change
 
-        title = QLabel("Transakcje")
-        title.setObjectName("sectionTitle")
-        subtitle = QLabel("Dodawaj, edytuj i eksportuj historię transakcji portfela.")
-        subtitle.setObjectName("sectionSubtitle")
-        subtitle.setWordWrap(True)
-
         self.symbol_input = QLineEdit()
         self.date_input = QDateEdit()
         self.date_input.setCalendarPopup(True)
@@ -51,6 +44,11 @@ class TransactionsTab(QWidget):
         self.fee_input.setDecimals(6)
         self.fee_input.setMaximum(1e9)
 
+        title = QLabel("Transakcje")
+        title.setObjectName("SectionTitle")
+        description = QLabel("Dodaj zakup akcji i zarządzaj historią transakcji.")
+        description.setObjectName("MutedText")
+
         form_layout = QFormLayout()
         form_layout.addRow("Symbol", self.symbol_input)
         form_layout.addRow("Data", self.date_input)
@@ -62,20 +60,12 @@ class TransactionsTab(QWidget):
         add_button = QPushButton("Dodaj transakcję")
         add_button.clicked.connect(self.add_transaction)
 
-        form_group = QGroupBox("Nowa transakcja")
-        form_group.setLayout(form_layout)
-
         self.table = QTableWidget(0, 7)
         self.table.setHorizontalHeaderLabels(
             ["ID", "Symbol", "Data", "Ilość", "Cena", "Waluta", "Prowizja"]
         )
         self.table.setColumnHidden(0, True)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.table.setAlternatingRowColors(True)
-        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.table.verticalHeader().setVisible(False)
-        self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
         edit_button = QPushButton("Edytuj")
         delete_button = QPushButton("Usuń")
@@ -95,13 +85,16 @@ class TransactionsTab(QWidget):
         button_row.addWidget(import_button)
         button_row.addWidget(export_button)
 
+        form_card = QFrame()
+        form_card.setObjectName("Card")
+        form_card_layout = QVBoxLayout(form_card)
+        form_card_layout.addLayout(form_layout)
+        form_card_layout.addLayout(button_row)
+
         layout = QVBoxLayout()
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(16)
         layout.addWidget(title)
-        layout.addWidget(subtitle)
-        layout.addWidget(form_group)
-        layout.addLayout(button_row)
+        layout.addWidget(description)
+        layout.addWidget(form_card)
         layout.addWidget(self.table)
         self.setLayout(layout)
 
