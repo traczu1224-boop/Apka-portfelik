@@ -2,15 +2,20 @@ APP_STYLE = """
 QWidget {
     font-family: 'Segoe UI', 'Inter', sans-serif;
     font-size: 11pt;
-    color: #E6EAF2;
+    color: #F5F7FB;
     background-color: #0F1116;
 }
-QLineEdit, QDateEdit, QDoubleSpinBox, QSpinBox {
+QLineEdit, QDateEdit, QDoubleSpinBox, QSpinBox, QComboBox {
     background-color: #1B2029;
     border: 1px solid #2A3140;
     border-radius: 6px;
     padding: 6px 8px;
-    color: #E6EAF2;
+    color: #F5F7FB;
+}
+QComboBox QAbstractItemView {
+    background-color: #1B2029;
+    color: #F5F7FB;
+    selection-background-color: #2E6EEB;
 }
 QTableWidget {
     background-color: #141824;
@@ -18,9 +23,12 @@ QTableWidget {
     border: 1px solid #2A3140;
     border-radius: 8px;
 }
+QTableWidget::item {
+    color: #F5F7FB;
+}
 QHeaderView::section {
     background-color: #1B2029;
-    color: #AEB6C2;
+    color: #C9D1DE;
     padding: 6px 8px;
     border: none;
 }
@@ -60,7 +68,10 @@ QLabel#SectionTitle {
     color: #FFFFFF;
 }
 QLabel#MutedText {
-    color: #9AA3B2;
+    color: #C0C7D6;
+}
+QCheckBox {
+    color: #F5F7FB;
 }
 QFrame#Card {
     background-color: #151925;

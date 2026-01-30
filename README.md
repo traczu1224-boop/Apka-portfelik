@@ -23,6 +23,7 @@ python main.py
 ```bash
 build.bat
 ```
+W folderze `dist/` pojawi się jednoplikowy instalator `ApkaPortfelik.exe`, który można uruchomić na docelowym komputerze jednym kliknięciem.
 
 ## Źródło notowań
 - Stooq CSV: `https://stooq.com/q/d/l/?s={SYMBOL}&i=d`

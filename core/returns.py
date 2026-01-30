@@ -50,16 +50,24 @@ def xirr(cashflows: list[tuple[datetime, float]]) -> Optional[float]:
         return None
     guess = 0.1
     for _ in range(50):
+        if guess <= -0.9999:
+            break
         f_value = xnpv(guess, cashflows)
         derivative = 0.0
         start = cashflows[0][0]
         for dt, amount in cashflows:
             days = (dt - start).days
             frac = days / 365.0
-            derivative -= (frac * amount) / ((1 + guess) ** (frac + 1))
+            base = 1 + guess
+            if base <= 0:
+                derivative = 0.0
+                break
+            derivative -= (frac * amount) / (base ** (frac + 1))
         if derivative == 0:
             break
         new_guess = guess - f_value / derivative
+        if new_guess <= -0.9999:
+            break
         if abs(new_guess - guess) < 1e-6:
             return new_guess * 100
         guess = new_guess
