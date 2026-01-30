@@ -4,7 +4,9 @@ from PySide6.QtCore import Qt, QDate
 from PySide6.QtWidgets import (
     QFileDialog,
     QFormLayout,
+    QGroupBox,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QLineEdit,
     QMessageBox,
@@ -26,6 +28,12 @@ class TransactionsTab(QWidget):
         super().__init__()
         self.db = db
         self.on_change = on_change
+
+        title = QLabel("Transakcje")
+        title.setObjectName("sectionTitle")
+        subtitle = QLabel("Dodawaj, edytuj i eksportuj historię transakcji portfela.")
+        subtitle.setObjectName("sectionSubtitle")
+        subtitle.setWordWrap(True)
 
         self.symbol_input = QLineEdit()
         self.date_input = QDateEdit()
@@ -54,12 +62,20 @@ class TransactionsTab(QWidget):
         add_button = QPushButton("Dodaj transakcję")
         add_button.clicked.connect(self.add_transaction)
 
+        form_group = QGroupBox("Nowa transakcja")
+        form_group.setLayout(form_layout)
+
         self.table = QTableWidget(0, 7)
         self.table.setHorizontalHeaderLabels(
             ["ID", "Symbol", "Data", "Ilość", "Cena", "Waluta", "Prowizja"]
         )
         self.table.setColumnHidden(0, True)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setAlternatingRowColors(True)
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.verticalHeader().setVisible(False)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
         edit_button = QPushButton("Edytuj")
         delete_button = QPushButton("Usuń")
@@ -80,7 +96,11 @@ class TransactionsTab(QWidget):
         button_row.addWidget(export_button)
 
         layout = QVBoxLayout()
-        layout.addLayout(form_layout)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(16)
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+        layout.addWidget(form_group)
         layout.addLayout(button_row)
         layout.addWidget(self.table)
         self.setLayout(layout)

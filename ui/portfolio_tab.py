@@ -2,6 +2,9 @@ from collections import defaultdict
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
     QLabel,
     QMessageBox,
     QPushButton,
@@ -23,7 +26,16 @@ class PortfolioTab(QWidget):
         self.db = db
         self.price_service = price_service
 
+        title = QLabel("Portfel")
+        title.setObjectName("sectionTitle")
+        subtitle = QLabel(
+            "Podgląd wartości pozycji, udziałów w portfelu i historii notowań."
+        )
+        subtitle.setObjectName("sectionSubtitle")
+        subtitle.setWordWrap(True)
+
         self.info_label = QLabel("")
+        self.info_label.setWordWrap(True)
         self.refresh_button = QPushButton("Odśwież notowania")
         self.refresh_button.clicked.connect(self.refresh_prices)
 
@@ -42,16 +54,34 @@ class PortfolioTab(QWidget):
             ]
         )
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setAlternatingRowColors(True)
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table.verticalHeader().setVisible(False)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
         self.pie_chart = MatplotlibChart()
         self.line_chart = MatplotlibChart(height=3)
 
+        charts_group = QGroupBox("Wykresy")
+        charts_layout = QVBoxLayout()
+        charts_layout.addWidget(self.pie_chart)
+        charts_layout.addWidget(self.line_chart)
+        charts_group.setLayout(charts_layout)
+
+        header_row = QHBoxLayout()
+        header_row.addWidget(title)
+        header_row.addStretch()
+        header_row.addWidget(self.refresh_button)
+
         layout = QVBoxLayout()
-        layout.addWidget(self.refresh_button)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(16)
+        layout.addLayout(header_row)
+        layout.addWidget(subtitle)
         layout.addWidget(self.info_label)
         layout.addWidget(self.table)
-        layout.addWidget(self.pie_chart)
-        layout.addWidget(self.line_chart)
+        layout.addWidget(charts_group)
         self.setLayout(layout)
 
         self.refresh()
@@ -101,7 +131,7 @@ class PortfolioTab(QWidget):
         self.table.resizeColumnsToContents()
 
         if len(currencies) > 1:
-            note = "W portfelu są różne waluty. Suma nie jest przeliczana." 
+            note = "W portfelu są różne waluty. Suma nie jest przeliczana."
         else:
             note = ""
         last_dates = {pos.symbol: pos.last_price_date for pos in positions if pos.last_price_date}
