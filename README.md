@@ -19,11 +19,15 @@ python main.py
 - Domyślny plik bazy danych: `data/portfolio.db`.
 - Limity pobrań i folder danych można zmienić w zakładce **Ustawienia**.
 
-## Budowanie EXE (opcjonalnie)
+## Budowanie instalatora EXE (Windows)
 ```bash
 build.bat
 ```
-W folderze `dist/` pojawi się jednoplikowy instalator `ApkaPortfelik.exe`, który można uruchomić na docelowym komputerze jednym kliknięciem.
+Po zakończeniu w folderze `dist/` pojawią się:
+- `ApkaPortfelik.exe` – wersja przenośna (uruchamiana bez instalacji),
+- `ApkaPortfelik-Setup.exe` – instalator do uruchomienia jednym kliknięciem na docelowym komputerze.
+
+> Jeśli nie masz zainstalowanego **Inno Setup 6**, skrypt zbuduje tylko wersję przenośną i poinformuje, że brakuje narzędzia do tworzenia instalatora.
 
 ## Źródło notowań
 - Stooq CSV: `https://stooq.com/q/d/l/?s={SYMBOL}&i=d`
