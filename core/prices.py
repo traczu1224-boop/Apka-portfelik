@@ -39,15 +39,18 @@ class PriceService:
             return False
         return (datetime.utcnow() - last_dt).total_seconds() < self.min_interval_minutes * 60
 
-    def update_symbol(self, symbol: str, force: bool = False) -> PriceUpdateResult:
+    def update_symbol(self, symbol: str, force: bool = False, log: bool = True) -> PriceUpdateResult:
         if self._should_skip(symbol, force=force):
             latest = self.db.get_latest_price(symbol)
-            return PriceUpdateResult(
+            result = PriceUpdateResult(
                 symbol=symbol,
                 rows_added=0,
                 message="Pominięto (limit pobrań)",
                 last_date=latest.date if latest else None,
             )
+            if log:
+                self._log_update(result)
+            return result
         url = STOOQ_HISTORY_URL.format(symbol=symbol.lower())
         response = None
         for attempt in range(2):
@@ -57,45 +60,70 @@ class PriceService:
                 break
             except requests.RequestException as exc:
                 if attempt == 1:
-                    return PriceUpdateResult(
+                    result = PriceUpdateResult(
                         symbol=symbol,
                         rows_added=0,
                         message=f"Błąd pobierania: {exc}",
                         last_date=None,
                     )
+                    if log:
+                        self._log_update(result)
+                    return result
                 time.sleep(1)
         if response is None:
-            return PriceUpdateResult(
+            result = PriceUpdateResult(
                 symbol=symbol,
                 rows_added=0,
                 message="Błąd pobierania: brak odpowiedzi",
                 last_date=None,
             )
+            if log:
+                self._log_update(result)
+            return result
 
         if "Date" not in response.text:
-            return PriceUpdateResult(
+            result = PriceUpdateResult(
                 symbol=symbol,
                 rows_added=0,
                 message="Brak danych - sprawdź ticker/sufiks Stooq",
                 last_date=None,
             )
+            if log:
+                self._log_update(result)
+            return result
 
         rows = self._parse_csv(response.text)
         if not rows:
-            return PriceUpdateResult(
+            result = PriceUpdateResult(
                 symbol=symbol,
                 rows_added=0,
                 message="Brak danych - sprawdź ticker/sufiks Stooq",
                 last_date=None,
             )
+            if log:
+                self._log_update(result)
+            return result
         rows_added = self.db.upsert_prices(symbol, rows)
         self.db.set_metadata(f"last_update:{symbol}", datetime.utcnow().isoformat())
         latest_date = rows[-1]["date"]
-        return PriceUpdateResult(
+        result = PriceUpdateResult(
             symbol=symbol,
             rows_added=rows_added,
             message="Zaktualizowano",
             last_date=latest_date,
+        )
+        if log:
+            self._log_update(result)
+        return result
+
+    def _log_update(self, result: PriceUpdateResult) -> None:
+        self.db.add_update_log(
+            timestamp=datetime.utcnow().isoformat(timespec="seconds"),
+            symbol=result.symbol,
+            message=result.message,
+            rows_added=result.rows_added,
+            last_date=result.last_date,
+            source="stooq",
         )
 
     def _parse_csv(self, content: str) -> list[dict]:
@@ -103,18 +131,31 @@ class PriceService:
         rows: list[dict] = []
         for row in reader:
             try:
+                close_value = row.get("Close")
+                if close_value in (None, ""):
+                    continue
+                close = float(close_value)
+
+                def parse_optional(value: str | None) -> Optional[float]:
+                    if not value:
+                        return None
+                    try:
+                        return float(value)
+                    except ValueError:
+                        return None
+
                 rows.append(
                     {
                         "date": row["Date"],
-                        "open": float(row["Open"]) if row.get("Open") else None,
-                        "high": float(row["High"]) if row.get("High") else None,
-                        "low": float(row["Low"]) if row.get("Low") else None,
-                        "close": float(row["Close"]) if row.get("Close") else None,
-                        "volume": float(row["Volume"]) if row.get("Volume") else None,
+                        "open": parse_optional(row.get("Open")),
+                        "high": parse_optional(row.get("High")),
+                        "low": parse_optional(row.get("Low")),
+                        "close": close,
+                        "volume": parse_optional(row.get("Volume")),
                         "source": "stooq",
                     }
                 )
-            except (KeyError, ValueError):
+            except (KeyError, ValueError, TypeError):
                 continue
         rows.sort(key=lambda item: item["date"])
         return rows
