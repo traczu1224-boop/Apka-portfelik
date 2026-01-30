@@ -6,9 +6,10 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout
 class MatplotlibChart(QWidget):
     def __init__(self, width: int = 5, height: int = 4, dpi: int = 100, parent=None):
         super().__init__(parent)
-        self.figure = Figure(figsize=(width, height), dpi=dpi)
+        self.figure = Figure(figsize=(width, height), dpi=dpi, facecolor="#ffffff")
         self.canvas = FigureCanvas(self.figure)
         layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.canvas)
         self.setLayout(layout)
 
@@ -22,6 +23,7 @@ class MatplotlibChart(QWidget):
         if values:
             ax.pie(values, labels=labels, autopct="%1.1f%%")
         ax.set_title("Udział w portfelu")
+        ax.set_facecolor("#ffffff")
         self.canvas.draw()
 
     def plot_line(self, x_values: list[str], y_values: list[float]) -> None:
@@ -33,5 +35,6 @@ class MatplotlibChart(QWidget):
         ax.set_title("Wartość portfela w czasie")
         ax.set_xlabel("Data")
         ax.set_ylabel("Wartość")
+        ax.set_facecolor("#ffffff")
         self.figure.tight_layout()
         self.canvas.draw()

@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QFileDialog,
     QFormLayout,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -22,6 +23,12 @@ class SettingsTab(QWidget):
         super().__init__()
         self.app_settings = app_settings
         self.on_save = on_save
+
+        title = QLabel("Ustawienia")
+        title.setObjectName("sectionTitle")
+        subtitle = QLabel("Dostosuj źródło danych i częstotliwość pobierania notowań.")
+        subtitle.setObjectName("sectionSubtitle")
+        subtitle.setWordWrap(True)
 
         self.data_dir_input = QLineEdit(str(app_settings.data_dir))
         self.browse_button = QPushButton("Wybierz")
@@ -46,8 +53,15 @@ class SettingsTab(QWidget):
         form.addRow("Limit pobrań (min)", self.min_interval_input)
         form.addRow("", self.eod_only_check)
 
+        form_group = QGroupBox("Konfiguracja")
+        form_group.setLayout(form)
+
         layout = QVBoxLayout()
-        layout.addLayout(form)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(16)
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+        layout.addWidget(form_group)
         layout.addWidget(self.save_button)
         layout.addStretch()
         self.setLayout(layout)
